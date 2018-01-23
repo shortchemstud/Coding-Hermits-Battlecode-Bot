@@ -3,37 +3,13 @@ import random
 import sys
 import traceback
 import os
+
+gc = bc.GameController()
 earthMap = gc.starting_map(bc.Planet.Earth)
 marsMap = gc.starting_map(bc.Planet.Mars)
-gc = bc.GameController()
 directions = [bc.Direction.North, bc.Direction.Northeast, bc.Direction.East, bc.Direction.Southeast, bc.Direction.South, bc.Direction.Southwest, bc.Direction.West, bc.Direction.Northwest]
 tryRotate = [0,-1,1,-2,2]
 my_team = gc.team()
-
-all_nodes_earth = []
-for x in range(earthMap.width):
-    for y in range(earthMap.height):
-		if earthMap.is_passable_terrain_at(bc.MapLocation(bc.Planet.Earth, x, y))
-        all_nodes_earth.append([x, y])
-
-all_nodes_mars = []
-for x in range(marsMap.width):
-	for y in range(marsMap.height):
-		if marsMap.is_passable_terrain_at(bc.MapLocation(bc.Planet.Mars, x, y)):
-			all_nodes_mars.append([x, y])
-
-def neighbors(node):
-    dirs = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]
-    result = []
-    for dir in dirs:
-        neighbor = [node[0] + dir[0], node[1] + dir[1]]
-		if gc.planet() == bc.Planet.Earth:
-			if 0 <= neighbor[0] < earthMap.width and 0 <= neighbor[1] < earthMap.height:
-				result.append(neighbor)
-		if gc.planet() == bc.Planet.Mars:
-			if 0 <= neighbor[0] < marsMap.width and 0 <= neighbor[1] < marsMap.height:
-				result.append(neighbor)
-		return result
 
 def invert(loc):#assumes Earth
 	newx = earthMap.width-loc.x
@@ -72,13 +48,15 @@ def fuzzygoto(unit,dest):
 gc.queue_research(bc.UnitType.Rocket)
 gc.queue_research(bc.UnitType.Ranger)
 gc.queue_research(bc.UnitType.Healer)
+gc.queue_research(bc.UnitType.Healer)
 gc.queue_research(bc.UnitType.Mage)
-gc.queue_research(bc.UnitType.Worker)
+gc.queue_research(bc.UnitType.Mage)
+gc.queue_research(bc.UnitType.Mage)
 gc.queue_research(bc.UnitType.Rocket)
 gc.queue_research(bc.UnitType.Ranger)
 gc.queue_research(bc.UnitType.Healer)
-gc.queue_research(bc.UnitType.Mage)
-gc.queue_research(bc.UnitType.Worker)
+gc.queue_research(bc.UnitType.Healer)
+gc.queue_research(bc.UnitType.Ranger)
 
 while True:
 	try:
@@ -140,13 +118,22 @@ while True:
 			d = random.choice(directions)
 			if unit.unit_type == bc.UnitType.Worker: # Worker micro
 				if unit.location.is_on_map():
-					if numWorkers <= 10 and gc.can_replicate(unit.id,d):
+					if gc.round() <= 50 and numWorkers <=3:
+						if gc.can_replicate(unit.id, d):
+							gc.replicate(unit.id, d)
+							continue
+					if gc.round() <= 50 and numFactory + numBlueprint <= 2:
+						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
+							gc.blueprint(unit.id, bc.UnitType.Factory, d)
+							continue
+					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
 						gc.replicate(unit.id,d)
 						continue
 					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
 						gc.harvest(unit.id, bc.Direction.Center)
 						d = random.choice(directions)
-					if numFactory <= 5:#blueprint
+						continue
+					if numFactory + numBlueprint <= 4 and gc.round() > 50:#blueprint
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
@@ -211,16 +198,19 @@ while True:
 					if gc.can_produce_robot(unit.id, bc.UnitType.Worker) and numWorkers <= 1: #emergency produce workers
 						gc.produce_robot(unit.id, bc.UnitType.Worker)
 						continue
-					build = random.randint(1,8)
-					if  build == 1 or build == 2 or build == 3:
+					build = random.randint(1,7)
+					if gc.round() <= 100:
+						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger):
+							gc.produce_robot(unit.id, bc.UnitType.Ranger)
+					if  build == 1:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Mage) and  numMage <= 60: #produce Mages
 							gc.produce_robot(unit.id, bc.UnitType.Mage)
 							continue
-					if build == 4 or build == 5:
+					if build == 2 or build == 4 or build == 6:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Healer) and numHealer <= 20: #produce Healers
 							gc.produce_robot(unit.id, bc.UnitType.Healer)
 							continue
-					if build == 6 or build == 7 or build == 8:
+					if build == 3 or build == 5 or build == 7:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and numRanger <= 60: #produce Rangers
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
 							continue
@@ -250,6 +240,9 @@ while True:
 							if other.unit_type == bc.UnitType.Ranger or other.unit_type == bc.UnitType.Mage:
 								if other.unit_type == bc.UnitType.Ranger and other.health <= 190:
 									gc.heal(unit.id, other.id)
+									if gc.is_move_ready(unit.id):
+										ol = other.location.map_location()
+										fuzzygoto(unit, ol)
 								if other.unit_type == bc.UnitType.Mage and other.health <= 70:
 									gc.heal(unit.id, other.id)
 									continue
@@ -285,9 +278,9 @@ while True:
 							el = other.location.map_location()
 							fuzzygoto(unit, el)
 							continue
-				if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
-					gc.move_robot(unit.id, d)
-					continue
+					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
+						gc.move_robot(unit.id, d)
+						continue
 
 			if unit.unit_type == bc.UnitType.Ranger: # Ranger micro = real gun in an airsoft fight
 				if unit.location.is_on_map():
