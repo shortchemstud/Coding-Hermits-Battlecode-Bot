@@ -1,1 +1,0 @@
-# Coding Hermits Battlecode Bot
