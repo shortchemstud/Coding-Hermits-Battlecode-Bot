@@ -126,14 +126,22 @@ while True:
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
+<<<<<<< HEAD
 					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
+=======
+					if numWorkers <= 10 and gc.can_replicate(unit.id,d) and gc.round() > 100:
+>>>>>>> bddd33a3df0848d1e882adfb323aee7f9da7b552
 						gc.replicate(unit.id,d)
 						continue
 					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
 						gc.harvest(unit.id, bc.Direction.Center)
 						d = random.choice(directions)
 						continue
+<<<<<<< HEAD
 					if numFactory + numBlueprint <= 4 and gc.round() > 50:#blueprint
+=======
+					if numFactory <= 5 and gc.round() > 50:#blueprint
+>>>>>>> bddd33a3df0848d1e882adfb323aee7f9da7b552
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
@@ -198,11 +206,16 @@ while True:
 					if gc.can_produce_robot(unit.id, bc.UnitType.Worker) and numWorkers <= 1: #emergency produce workers
 						gc.produce_robot(unit.id, bc.UnitType.Worker)
 						continue
+<<<<<<< HEAD
 					build = random.randint(1,7)
 					if gc.round() <= 100:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger):
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
 					if  build == 1:
+=======
+					build = random.randint(1,8)
+					if  build == 1 or build == 8:
+>>>>>>> bddd33a3df0848d1e882adfb323aee7f9da7b552
 						if gc.can_produce_robot(unit.id, bc.UnitType.Mage) and  numMage <= 60: #produce Mages
 							gc.produce_robot(unit.id, bc.UnitType.Mage)
 							continue
