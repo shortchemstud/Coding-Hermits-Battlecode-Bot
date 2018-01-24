@@ -23,10 +23,14 @@ if gc.planet() == bc.Planet.Earth:
 	oneLoc = gc.my_units()[0].location.map_location()
 	earthMap = gc.starting_map(bc.Planet.Earth)
 	enemyStart = invert(oneLoc);
+	enemyLocationEarth = enemyStart
 	print('worker starts at '+locToStr(oneLoc))
 	print('enemy worker presumably at '+locToStr(enemyStart))
 
-marsMap = gc.starting_map(bc.Planet.Mars)
+if gc.planet() == bc.Planet.Mars:
+	mx = random.randint(0, marsMap.width)
+	my = random.randint(0, marsMap.height)
+	enemyLocationMars = bc.MapLocation(bc.Planet.Mars, mx, my)
 
 def rotate(dir,amount):
 	ind = directions.index(dir)
@@ -126,26 +130,18 @@ while True:
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
-<<<<<<< HEAD
 					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
-=======
-					if numWorkers <= 10 and gc.can_replicate(unit.id,d) and gc.round() > 100:
->>>>>>> bddd33a3df0848d1e882adfb323aee7f9da7b552
 						gc.replicate(unit.id,d)
 						continue
 					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
 						gc.harvest(unit.id, bc.Direction.Center)
 						d = random.choice(directions)
 						continue
-<<<<<<< HEAD
 					if numFactory + numBlueprint <= 4 and gc.round() > 50:#blueprint
-=======
-					if numFactory <= 5 and gc.round() > 50:#blueprint
->>>>>>> bddd33a3df0848d1e882adfb323aee7f9da7b552
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
-					if gc.round() > 150 and gc.can_blueprint(unit.id, bc.UnitType.Rocket, d) and gc.karbonite() > bc.UnitType.Rocket.blueprint_cost():
+					if gc.round() > 100 and gc.can_blueprint(unit.id, bc.UnitType.Rocket, d) and gc.karbonite() > bc.UnitType.Rocket.blueprint_cost():
 						gc.blueprint(unit.id, bc.UnitType.Rocket, d)
 						continue
 					adjacentUnits = gc.sense_nearby_units(unit.location.map_location(), 2)
@@ -206,26 +202,59 @@ while True:
 					if gc.can_produce_robot(unit.id, bc.UnitType.Worker) and numWorkers <= 1: #emergency produce workers
 						gc.produce_robot(unit.id, bc.UnitType.Worker)
 						continue
-<<<<<<< HEAD
 					build = random.randint(1,7)
 					if gc.round() <= 100:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger):
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
 					if  build == 1:
-=======
-					build = random.randint(1,8)
-					if  build == 1 or build == 8:
->>>>>>> bddd33a3df0848d1e882adfb323aee7f9da7b552
-						if gc.can_produce_robot(unit.id, bc.UnitType.Mage) and  numMage <= 60: #produce Mages
+						if gc.can_produce_robot(unit.id, bc.UnitType.Mage) and  numMage <= 40: #produce Mages
 							gc.produce_robot(unit.id, bc.UnitType.Mage)
 							continue
 					if build == 2 or build == 4 or build == 6:
-						if gc.can_produce_robot(unit.id, bc.UnitType.Healer) and numHealer <= 20: #produce Healers
+						if gc.can_produce_robot(unit.id, bc.UnitType.Healer) and numHealer <= 60: #produce Healers
 							gc.produce_robot(unit.id, bc.UnitType.Healer)
 							continue
 					if build == 3 or build == 5 or build == 7:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and numRanger <= 60: #produce Rangers
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
+							continue
+
+			if unit.unit_type == bc.UnitType.Ranger: # Ranger micro = real gun in an airsoft fight
+				if unit.location.is_on_map():
+					inRangeUnits = gc.sense_nearby_units(unit.location.map_location(), 50)
+					for other in inRangeUnits:
+						if other.team != my_team and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, other.id):
+							attacking = True
+							gc.attack(unit.id, other.id)
+							if unit.location.is_on_planet(bc.Planet.Earth):
+								enemyLocationEarth = other.location.map_location()
+								continue
+							if unit.location.is_on_planet(bc.Planet.Mars):
+								enemyLocationMars = other.location.map_location()
+								continue
+							continue
+					if rocketWaiting:
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Earth):
+							ml = unit.location.map_location()
+							rdist = ml.distance_squared_to(rocketLocation)
+							if rdist>2:
+								fuzzygoto(unit, rocketLocation)
+								continue
+					if gc.round() > 400:
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Earth):
+							ml = unit.location.map_location()
+							edist = ml.distance_squared_to(enemyLocationEarth)
+							if edist>12:
+								fuzzygoto(unit, enemyLocationEarth)
+								continue
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Mars):
+							ml = unit.location.map_location()
+							edist = ml.distance_squared_to(enemyLocationMars)
+							if edist > 12:
+								fuzzygoto(unit, enemyLocationMars)
+					if not attacking:
+						if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
+							gc.move_robot(unit.id, d)
 							continue
 
 			if unit.unit_type == bc.UnitType.Knight: # Knight micro = garbage
@@ -266,6 +295,18 @@ while True:
 							if rdist>2:
 								fuzzygoto(unit, rocketLocation)
 								continue
+					if gc.round() > 400:
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Earth):
+							ml = unit.location.map_location()
+							edist = ml.distance_squared_to(enemyLocationEarth)
+							if edist>12:
+								fuzzygoto(unit, enemyLocationEarth)
+								continue
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Mars):
+							ml = unit.location.map_location()
+							edist = ml.distance_squared_to(enemyLocationMars)
+							if edist > 12:
+								fuzzygoto(unit, enemyLocationMars)
 					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
 						gc.move_robot(unit.id, d)
 						continue
@@ -279,6 +320,18 @@ while True:
 							if rdist>2:
 								fuzzygoto(unit, rocketLocation)
 								continue
+					if gc.round() > 400:
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Earth):
+							ml = unit.location.map_location()
+							edist = ml.distance_squared_to(enemyLocationEarth)
+							if edist>2:
+								fuzzygoto(unit, enemyLocationEarth)
+								continue
+						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Mars):
+							ml = unit.location.map_location()
+							edist = ml.distance_squared_to(enemyLocationMars)
+							if edist > 2:
+								fuzzygoto(unit, enemyLocationMars)
 					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
 						gc.move_robot(unit.id, d)
 						continue
@@ -287,33 +340,9 @@ while True:
 						if other.team != my_team and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, other.id):
 							gc.attack(unit.id, other.id)
 							continue
-						if other.team != my_team and gc.is_move_ready(unit.id):
-							el = other.location.map_location()
-							fuzzygoto(unit, el)
-							continue
 					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
 						gc.move_robot(unit.id, d)
 						continue
-
-			if unit.unit_type == bc.UnitType.Ranger: # Ranger micro = real gun in an airsoft fight
-				if unit.location.is_on_map():
-					inRangeUnits = gc.sense_nearby_units(unit.location.map_location(), 50)
-					for other in inRangeUnits:
-						if other.team != my_team and gc.is_attack_ready(unit.id) and gc.can_attack(unit.id, other.id):
-							attacking = True
-							gc.attack(unit.id, other.id)
-							continue
-					if rocketWaiting:
-						if gc.is_move_ready(unit.id) and unit.location.is_on_planet(bc.Planet.Earth):
-							ml = unit.location.map_location()
-							rdist = ml.distance_squared_to(rocketLocation)
-							if rdist>2:
-								fuzzygoto(unit, rocketLocation)
-								continue
-					if not attacking:
-						if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d):
-							gc.move_robot(unit.id, d)
-							continue
 
 	except Exception as e:
 		print('Error:', e)
