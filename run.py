@@ -10,7 +10,7 @@ marsMap = gc.starting_map(bc.Planet.Mars)
 directions = [bc.Direction.North, bc.Direction.Northeast, bc.Direction.East, bc.Direction.Southeast, bc.Direction.South, bc.Direction.Southwest, bc.Direction.West, bc.Direction.Northwest]
 tryRotate = [0,-1,1,-2,2]
 my_team = gc.team()
-
+resourced = random.choice(directions)
 def invert(loc):#assumes Earth
 	newx = earthMap.width-loc.x
 	newy = earthMap.height-loc.y
@@ -122,21 +122,23 @@ while True:
 			d = random.choice(directions)
 			if unit.unit_type == bc.UnitType.Worker: # Worker micro
 				if unit.location.is_on_map():
-					if gc.round() <= 50 and numWorkers <=3:
-						if gc.can_replicate(unit.id, d):
-							gc.replicate(unit.id, d)
-							continue
 					if gc.round() <= 50 and numFactory + numBlueprint <= 2:
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
-					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
-						gc.replicate(unit.id,d)
-						continue
 					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
+						for direct in directions:
+							if gc.can_harvest(unit.id, direct):
+								resourced = direct
+								break
 						gc.harvest(unit.id, bc.Direction.Center)
-						d = random.choice(directions)
-						continue
+						if gc.karbonite_at(unit.location.map_location):
+							harvesting = True
+						if not gc.karbonite_at(unit.location.map_location):
+							harvesting = False
+						if not harvesting:
+							if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
+								gc.move_robot(unit.id, resourced)
 					if numFactory + numBlueprint <= 4 and gc.round() > 50:#blueprint
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
@@ -165,6 +167,13 @@ while True:
 									gc.build(unit.id, adjacent.id)
 					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d) and not buildingSomething:
 						gc.move_robot(unit.id, d)
+						continue
+					if gc.round() <= 50 and numWorkers <=5:
+						if gc.can_replicate(unit.id, d):
+							gc.replicate(unit.id, d)
+							continue
+					if numWorkers <= 15 and gc.can_replicate(unit.id,d) and gc.round() > 50:
+						gc.replicate(unit.id,d)
 						continue
 
 			if unit.unit_type == bc.UnitType.Rocket: # rocket micro
