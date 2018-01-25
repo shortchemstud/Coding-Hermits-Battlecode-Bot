@@ -127,6 +127,10 @@ while True:
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
+					if numFactory + numBlueprint <= 5 and gc.round() > 50:#blueprint
+						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
+							gc.blueprint(unit.id, bc.UnitType.Factory, d)
+							continue
 					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
 						for direct in directions:
 							if gc.can_harvest(unit.id, direct):
@@ -139,9 +143,14 @@ while True:
 						if not harvesting:
 							if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
 								gc.move_robot(unit.id, resourced)
-					if numFactory + numBlueprint <= 5 and gc.round() > 50:#blueprint
-						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
-							gc.blueprint(unit.id, bc.UnitType.Factory, d)
+					else:
+						harvesting = False
+						for direct in directions:
+							if gc.can_harvest(unit.id, direct):
+								resourced = direct
+								if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
+									gc.move_robot(unit.id, resourced)
+									continue
 							continue
 					if gc.round() > 125 and gc.can_blueprint(unit.id, bc.UnitType.Rocket, d) and gc.karbonite() > bc.UnitType.Rocket.blueprint_cost():
 						gc.blueprint(unit.id, bc.UnitType.Rocket, d)
