@@ -49,6 +49,7 @@ def fuzzygoto(unit,dest):
 			gc.move_robot(unit.id,d)
 			break
 
+gc.queue_research(bc.UnitType.Worker)
 gc.queue_research(bc.UnitType.Rocket)
 gc.queue_research(bc.UnitType.Ranger)
 gc.queue_research(bc.UnitType.Healer)
@@ -130,20 +131,19 @@ while True:
 						for direct in directions:
 							if gc.can_harvest(unit.id, direct):
 								resourced = direct
-								break
 						gc.harvest(unit.id, bc.Direction.Center)
-						if gc.karbonite_at(unit.location.map_location):
+						if gc.karbonite_at(unit.location.map_location()):
 							harvesting = True
 						if not gc.karbonite_at(unit.location.map_location):
 							harvesting = False
 						if not harvesting:
 							if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
 								gc.move_robot(unit.id, resourced)
-					if numFactory + numBlueprint <= 4 and gc.round() > 50:#blueprint
+					if numFactory + numBlueprint <= 5 and gc.round() > 50:#blueprint
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							continue
-					if gc.round() > 100 and gc.can_blueprint(unit.id, bc.UnitType.Rocket, d) and gc.karbonite() > bc.UnitType.Rocket.blueprint_cost():
+					if gc.round() > 125 and gc.can_blueprint(unit.id, bc.UnitType.Rocket, d) and gc.karbonite() > bc.UnitType.Rocket.blueprint_cost():
 						gc.blueprint(unit.id, bc.UnitType.Rocket, d)
 						continue
 					adjacentUnits = gc.sense_nearby_units(unit.location.map_location(), 2)
@@ -168,11 +168,11 @@ while True:
 					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d) and not buildingSomething:
 						gc.move_robot(unit.id, d)
 						continue
-					if gc.round() <= 50 and numWorkers <=5:
+					if gc.round() <= 50 and numWorkers <=3:
 						if gc.can_replicate(unit.id, d):
 							gc.replicate(unit.id, d)
 							continue
-					if numWorkers <= 15 and gc.can_replicate(unit.id,d) and gc.round() > 50:
+					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
 						gc.replicate(unit.id,d)
 						continue
 
