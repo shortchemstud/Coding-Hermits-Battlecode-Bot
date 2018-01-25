@@ -126,10 +126,12 @@ while True:
 					if gc.round() <= 50 and numFactory + numBlueprint <= 2:
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
+							numBlueprint += 1
 							continue
 					if numFactory + numBlueprint <= 5 and gc.round() > 50:#blueprint
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
+							numBlueprint += 1
 							continue
 					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
 						for direct in directions:
@@ -180,9 +182,11 @@ while True:
 					if gc.round() <= 50 and numWorkers <=3:
 						if gc.can_replicate(unit.id, d):
 							gc.replicate(unit.id, d)
+							numWorkers += 1
 							continue
 					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
 						gc.replicate(unit.id,d)
+						numWorkers += 1
 						continue
 
 			if unit.unit_type == bc.UnitType.Rocket: # rocket micro
@@ -224,17 +228,21 @@ while True:
 					if gc.round() <= 100:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger):
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
+							numranger += 1
 					if  build == 1:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Mage) and  numMage <= 40: #produce Mages
 							gc.produce_robot(unit.id, bc.UnitType.Mage)
+							numMage += 1
 							continue
 					if build == 2 or build == 4 or build == 6:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Healer) and numHealer <= 60: #produce Healers
 							gc.produce_robot(unit.id, bc.UnitType.Healer)
+							numHealer += 1
 							continue
 					if build == 3 or build == 5 or build == 7:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger) and numRanger <= 60: #produce Rangers
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
+							numRanger += 1
 							continue
 
 			if unit.unit_type == bc.UnitType.Ranger: # Ranger micro = real gun in an airsoft fight
