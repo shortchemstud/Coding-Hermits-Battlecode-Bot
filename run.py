@@ -3,6 +3,7 @@ import random
 import sys
 import traceback
 import os
+import math
 
 gc = bc.GameController()
 earthMap = gc.starting_map(bc.Planet.Earth)
@@ -11,6 +12,7 @@ directions = [bc.Direction.North, bc.Direction.Northeast, bc.Direction.East, bc.
 tryRotate = [0,-1,1,-2,2]
 my_team = gc.team()
 resourced = random.choice(directions)
+
 def invert(loc):#assumes Earth
 	newx = earthMap.width-loc.x
 	newy = earthMap.height-loc.y
@@ -20,12 +22,31 @@ def locToStr(loc):
 	return '('+str(loc.x)+','+str(loc.y)+')'
 
 if gc.planet() == bc.Planet.Earth:
+	passableLocationsEarth = []
+	for pye in range(earthMap.height):
+		for pxe in range(earthMap.width):
+			if earthMap.is_passable_terrain_at(bc.MapLocation(bc.Planet.Earth, pxe, pye)):
+				passableLocationsEarth.append((pxe, pye))
+
 	oneLoc = gc.my_units()[0].location.map_location()
 	earthMap = gc.starting_map(bc.Planet.Earth)
 	enemyStart = invert(oneLoc);
 	enemyLocationEarth = enemyStart
 	print('worker starts at '+locToStr(oneLoc))
 	print('enemy worker presumably at '+locToStr(enemyStart))
+
+if gc.planet() == bc.Planet.Earth:
+	karboniteMap = []
+	for ky in range(earthMap.height):
+		for kx in range(earthMap.width):
+			if earthMap.initial_karbonite_at(bc.MapLocation(bc.Planet.Earth, kx, ky)) > 0:
+				karboniteMap.append((kx, ky))
+	for loc in karboniteMap:
+		if loc not in passableLocationsEarth:
+			passableLocationsEarth.remove(loc)
+
+"karboniteMap[0][0] = X cordinate"
+"karboniteMap[0][1] = Y cordinate"
 
 if gc.planet() == bc.Planet.Mars:
 	mx = random.randint(0, marsMap.width)
@@ -66,6 +87,7 @@ gc.queue_research(bc.UnitType.Ranger)
 while True:
 	try:
 		#count things: unfinished buildings, workers
+		workerId = []
 		numWorkers = 0
 		numFactory = 0
 		numBlueprint = 0
@@ -100,6 +122,7 @@ while True:
 					numRocket+=1
 			if unit.unit_type== bc.UnitType.Worker:
 				numWorkers+=1
+				workerId.append(unit.id)
 			if unit.unit_type == bc.UnitType.Ranger:
 				numRanger+=1
 			if unit.unit_type == bc.UnitType.Knight:
@@ -123,6 +146,7 @@ while True:
 			d = random.choice(directions)
 			if unit.unit_type == bc.UnitType.Worker: # Worker micro
 				if unit.location.is_on_map():
+					workerLocation = unit.location.map_location()
 					if gc.round() <= 50 and numFactory + numBlueprint <= 2:
 						if gc.can_blueprint(unit.id, bc.UnitType.Factory, d):
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
@@ -134,27 +158,24 @@ while True:
 							numBlueprint += 1
 							continue
 					if unit.location.is_on_planet(bc.Planet.Earth) and gc.can_harvest(unit.id, bc.Direction.Center):
-						if gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, unit.location.map_location.x, unit.location.map_location.y)):
+						if gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, workerLocation.x, workerLocation.y)):
 							for direct in directions:
 								if gc.can_harvest(unit.id, direct):
 									resourced = direct
 									gc.harvest(unit.id, bc.Direction.Center)
-							if gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, unit.location.map_location.x, unit.location.map_location.y)):
+								else:
+									if gc.can_harvest(unit.id, bc.Direction.Center):
+										gc.harvest(unit.id, bc.Direction.Center)
+							if gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, workerLocation.x, workerLocation.y)):
 								harvesting = True
-							if not gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, unit.location.map_location.x, unit.location.map_location.y)):
+							if not gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, workerLocation.x, workerLocation.y)):
 								harvesting = False
 							if not harvesting:
 								if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
 									gc.move_robot(unit.id, resourced)
-					else:
-						harvesting = False
-						for direct in directions:
-							if gc.can_harvest(unit.id, direct):
-								resourced = direct
-								if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
-									gc.move_robot(unit.id, resourced)
-									continue
 							continue
+					if (workerLocation.x, workerLocation.y) in karboniteMap and not gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, workerLocation.x, workerLocation.y)):
+						karboniteMap.remove((workerLocation.x, workerLocation.y))
 					if gc.round() > 125 and gc.can_blueprint(unit.id, bc.UnitType.Rocket, d) and gc.karbonite() > bc.UnitType.Rocket.blueprint_cost():
 						gc.blueprint(unit.id, bc.UnitType.Rocket, d)
 						continue
@@ -178,7 +199,16 @@ while True:
 								if gc.can_build(unit.id, adjacent.id):
 									gc.build(unit.id, adjacent.id)
 					if gc.is_move_ready(unit.id) and gc.can_move(unit.id, d) and not buildingSomething:
-						gc.move_robot(unit.id, d)
+						smallest_distance = 999999
+						nearestKarbonite = (0,0)
+						for loc in karboniteMap:
+							distance = math.sqrt( ((loc[0]-workerLocation.x)**2)+((loc[1]-workerLocation.y)**2) )
+							if distance < smallest_distance:
+								smallest_distance = distance
+								nearestKarbonite = loc
+						fuzzygoto(unit, bc.MapLocation(bc.Planet.Earth, nearestKarbonite[0], nearestKarbonite[1]))
+
+
 						continue
 					if gc.round() <= 50 and numWorkers <=3:
 						if gc.can_replicate(unit.id, d):
@@ -217,7 +247,12 @@ while True:
 							continue
 
 			if unit.unit_type == bc.UnitType.Factory: # Factory micro
+				factoryLocation = unit.location.map_location()
 				garrison = unit.structure_garrison()
+				if (factoryLocation.x, factoryLocation.y) in passableLocationsEarth:
+					passableLocationsEarth.remove((factoryLocation.x, factoryLocation.y))
+				if (factoryLocation.x, factoryLocation.y) in karboniteMap:
+					karboniteMap.remove((factoryLocation.x, factoryLocation.y))
 				if len(garrison) > 0:#ungarrison
 					if gc.can_unload(unit.id, d):
 						gc.unload(unit.id, d)
@@ -229,7 +264,7 @@ while True:
 					if gc.round() <= 100:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Ranger):
 							gc.produce_robot(unit.id, bc.UnitType.Ranger)
-							numranger += 1
+							numRanger += 1
 					if  build == 1:
 						if gc.can_produce_robot(unit.id, bc.UnitType.Mage) and  numMage <= 40: #produce Mages
 							gc.produce_robot(unit.id, bc.UnitType.Mage)
