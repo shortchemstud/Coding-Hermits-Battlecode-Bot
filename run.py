@@ -133,18 +133,19 @@ while True:
 							gc.blueprint(unit.id, bc.UnitType.Factory, d)
 							numBlueprint += 1
 							continue
-					if gc.karbonite_at(unit.location.map_location()) and gc.can_harvest(unit.id, bc.Direction.Center):
-						for direct in directions:
-							if gc.can_harvest(unit.id, direct):
-								resourced = direct
-						gc.harvest(unit.id, bc.Direction.Center)
-						if gc.karbonite_at(unit.location.map_location()):
-							harvesting = True
-						if not gc.karbonite_at(unit.location.map_location):
-							harvesting = False
-						if not harvesting:
-							if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
-								gc.move_robot(unit.id, resourced)
+					if unit.location.is_on_planet(bc.Planet.Earth) and gc.can_harvest(unit.id, bc.Direction.Center):
+						if gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, unit.location.map_location.x, unit.location.map_location.y)):
+							for direct in directions:
+								if gc.can_harvest(unit.id, direct):
+									resourced = direct
+									gc.harvest(unit.id, bc.Direction.Center)
+							if gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, unit.location.map_location.x, unit.location.map_location.y)):
+								harvesting = True
+							if not gc.karbonite_at(bc.MapLocation(bc.Planet.Earth, unit.location.map_location.x, unit.location.map_location.y)):
+								harvesting = False
+							if not harvesting:
+								if gc.can_move(unit.id, resourced) and gc.is_move_ready(unit.id):
+									gc.move_robot(unit.id, resourced)
 					else:
 						harvesting = False
 						for direct in directions:
