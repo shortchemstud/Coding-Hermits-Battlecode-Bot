@@ -210,12 +210,12 @@ while True:
 
 
 						continue
-					if gc.round() <= 50 and numWorkers <=3:
+					if gc.round() <= 50 and numWorkers <=5:
 						if gc.can_replicate(unit.id, d):
 							gc.replicate(unit.id, d)
 							numWorkers += 1
 							continue
-					if numWorkers <= 7 and gc.can_replicate(unit.id,d) and gc.round() > 100:
+					if numWorkers <= 14 and gc.can_replicate(unit.id,d) and gc.round() > 100:
 						gc.replicate(unit.id,d)
 						numWorkers += 1
 						continue
